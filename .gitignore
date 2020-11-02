@@ -37,3 +37,13 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Survey Data
+data_cleaning-survey1.R
+ns20200625.dta
+survey_data.csv
+
+# Census Data
+data_cleaning-post-strat1.R
+usa_00001.dta
+census_data.csv

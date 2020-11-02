@@ -1,0 +1,273 @@
+---
+title: "The Study of the Likelihood of Donald Trump Winning the 2020 Election"
+author: "Shuxian Cao, Xueying Fu, Yichen Su, Yiyang Huang"
+date: "28 October 2020"
+output:
+  bookdown::pdf_document2
+notice: "@*"
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(gridExtra)
+
+# Loading in the cleaned survey Data
+survey_data <- read_csv("survey_data.csv")
+nona_survey <- na.omit(survey_data)
+
+# Loading in the cleaned census Data
+census_data <- read_csv("census_data.csv")
+```
+
+# Information
+
+**Topic:** The Study of the Likelihood of Donald Trump Winning the 2020 Election
+
+**Author:** Shuxian Cao, Xueying Fu, Yichen Su, Yiyang Huang
+
+**Date:** October 28, 2020
+
+**Code and data supporting this analysis is available at:**
+
+# Model
+
+Here we are interested in predicting the popular vote outcome of the 2020 American federal election (include citation). To do this we are employing a post-stratification technique. In the following sub-sections I will describe the model specifics and the post-stratification calculation.
+
+
+## Model Specifics
+I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:
+
+$$
+log(\frac{p}{1-p}) = \beta_0 + \beta_1 X_{1age} + \beta_2 X_{2Labor_{Yes}} + \beta_3 X_{3Male} + \beta_4 X_{4Region_{NW}} + \beta_5 X_{5Region_{S}} + \beta_6 X_{6Region_{W}}
+$$
+$$
++ \beta_7 X_{7Race_{B.AA.N}} + \beta_8 X_{8Race_{CN}} + \beta_9 X_{9Race_{JP}} + \beta_{10} X_{10Race_{O.Asian}} + \beta_{11} X_{11Race_{Other}} + \beta_{12} X_{12Race_{White}} + \epsilon
+$$
+
+Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
+
+```{r, include = FALSE}
+# Rename gender variable to sex in nona_survey data
+unique(nona_survey$gender)
+unique(census_data$sex)
+nona_survey <- nona_survey %>%
+  mutate(sex = if_else(gender == "Female", "female", "male"))
+
+# Rename employment variable to labforce in nona_survey data
+unique(nona_survey$employment)
+unique(census_data$labforce)
+nona_survey <- nona_survey %>%
+  mutate(labforce = if_else(employment == "Full-time employed", "yes, in the labor force",
+                    if_else(employment == "Unemployed or temporarily on layoff", "no, not in the labor force",
+                    if_else(employment == "Retired", "no, not in the labor force",
+                    if_else(employment == "Student", "no, not in the labor force",
+                    if_else(employment == "Homemaker", "no, not in the labor force",
+                    if_else(employment == "Part-time employed", "yes, in the labor force", 
+                    if_else(employment == "Self-employed", "yes, in the labor force", 
+                    if_else(employment == "Permanently disabled", "no, not in the labor force", "no, not in the labor force")))))))))
+
+# Rename race_ethnicity variable to race in nona_survey data
+unique(nona_survey$race_ethnicity)
+unique(census_data$race)
+nona_survey <- nona_survey %>%
+  mutate(race = if_else(race_ethnicity == "White", "white",
+                if_else(race_ethnicity == "Black, or African American", "black/african american/negro",
+                if_else(race_ethnicity == "Asian (Asian Indian)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Asian (Vietnamese)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Asian (Chinese)", "chinese",
+                if_else(race_ethnicity == "Asian (Korean)", "other asian or pacific islander", 
+                if_else(race_ethnicity == "Asian (Japanese)", "japanese", 
+                if_else(race_ethnicity == "Asian (Filipino)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Asian (Other)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Pacific Islander (Native Hawaiian)", "other asian or pacific islander",
+                if_else(race_ethnicity == "American Indian or Alaska Native", "american indian or alaska native",
+                if_else(race_ethnicity == "Pacific Islander (Other)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Pacific Islander (Samoan)", "other asian or pacific islander",
+                if_else(race_ethnicity == "Pacific Islander (Guamanian)", "other asian or pacific islander", "other race, nec")))))))))))))))
+
+# Remove the columns that have been changed/mutated (Deleted vote_2016, vote_2020, ideo5, household_income)
+nona_survey <- nona_survey %>%
+  select(interest, registration, vote_intention,
+         labforce, foreign_born, sex, census_region,
+         hispanic, race, education, state, congress_district, age, vote_trump)
+
+```
+
+
+```{r, include = FALSE}
+# Step 1: With all variables
+# Creating the Model (AIC 7446.8)
+model_with_full <- glm(vote_trump ~ age + registration + interest + vote_intention + labforce + foreign_born + sex + census_region + hispanic + race + education + state + congress_district, data = nona_survey, family =  "binomial")
+
+# Step2: Without congress_distrist, vote_intention, registration, foreign_born (AIC 7206.4)
+model1 <- glm(vote_trump ~ age + interest + labforce + sex + census_region + hispanic + race + education + state, data = nona_survey, family =  "binomial")
+
+# Step3: 1 Without interest, hispanic, state, education (AIC 7202.8)
+survey_model <- glm(vote_trump ~ age + labforce + sex + census_region + race, data = nona_survey, family =  "binomial")
+
+```
+
+## Post-Stratification 
+
+In order to estimate the proportion of voters who will vote for Donald Trump I need to perform a post-stratification analysis. Here I create cells based off different ages. Using the model described in the previous sub-section I will estimate the proportion of voters in each age bin. I will then weight each proportion estimate (within each bin) by the respective population size of that bin and sum those values and divide that by the entire population size. 
+
+
+\newpage
+
+# Results
+
+```{r table1}
+# Here I will perform the post-stratification calculation
+census_data$logodds_estimate <-
+  survey_model %>%
+  predict(newdata = census_data)
+
+census_data$estimate <-
+  exp(census_data$logodds_estimate)/(1+exp(census_data$logodds_estimate))
+
+post_strat_predict <- census_data %>%
+  mutate(alp_predict_prop = estimate*n) %>%
+  summarise(predict = sum(alp_predict_prop)/sum(n))
+
+kable(post_strat_predict, format = "markdown", digits = 3, align = "c", 
+      caption = "The Predicted Proportion of Voters for Republican Party")
+```
+
+The proportion of voters for the Republican Party (The candidate of this party is Donald Trump.) is estimated to be **0.409**, meaning that there are less than a half voters id going to vote for Donald Trump. This prediction is based on our post-stratification analysis of the proportion of voters in favor of the Republican Party models by a logistic regression model, `survey_model`, which accounted for `age`, `labforce` (i.e employment status), `sex`, `census region`, and `race`.
+
+```{r summary aic, include = FALSE}
+summary(model_with_full)
+summary(model1)
+summary(survey_model)
+```
+
+```{r table2}
+aic_summary <- data.frame(Model_Name = c("model_with_full", "model1", "surbey_model"), 
+            AIC = c(7446.8, 7206.4,7202.8))
+kable(aic_summary, align = "c", format = "markdown", col.names = c("Model Name", "AIC"),
+      caption = "Summary - AIC Score of Each Potential Model")
+```
+
+By summarizing the three potential models in Part I, we formed an AIC table here. The AIC of`model_with_full`, which includes all the variable in the cleaned survey dataset, `nona_survey`, is equal to 7446.8, while the one of `model1` decreases to 7206.4, and the lowest AIC appears in our final logistic regression model called `survey_model`.
+
+```{r table3}
+kable(broom::tidy(survey_model), align = "c", format = "markdown", digits = 3,
+      col.names = c("Term", "Estimate", "Standard Error", "Test Statistic", "P-Value"),
+      caption = "Summary for the Survey Logistic Regression Model")
+```
+
+Since `survey_model` is the final model we chose for predict the proportion of potential voters for Donald Trump, we also formed a summary table with the estimated values of the intercept, $\hat{\beta_0}$ and estimated slopes $\hat{\beta_i}$ (for i = 1,...,12) as well as standard errors, test statistics and p-value. Therefore, the fitted logistic model is:
+$$
+log(\frac{\hat{p}}{1-\hat{p}}) = -1.529 + 0.016 X_{age} + 0.287 X_{Labor_{Yes}} + 0.422 X_{Male} -0.119 X_{Region_{NW}} + 0.294 X_{Region_{S}} - 0.081 X_{Region_{W}}
+$$
+
+$$
+- 1.87 X_{Race_{B.AA.N}} - 1.167 X_{Race_{CN}} - 0.603 X_{Race_{JP}} - 0.459 X_{Race_{O.Asian}} - 0.604 X_{Race_{Other}} + 0.14 X_{Race_{White}}.
+$$
+
+\newpage
+
+```{r fig1, fig.cap = "Relationship between Voters' Choice and Number of Voters by Sex, Employment Status, Census Region and Race"}
+hist_sex <- ggplot(nona_survey, aes(as.character(vote_trump), fill = sex)) + 
+  geom_histogram(stat = "count") +
+  theme_bw() +
+  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+       fill = "Sex") +
+  theme(plot.title = element_text(hjust = 0))
+
+hist_lab <- ggplot(nona_survey, aes(as.character(vote_trump), fill = labforce)) + geom_histogram(stat = "count") +
+  theme_bw() +
+  labs(x = "Whether vote for Donald Trump", y = "Number of People",
+       fill = "Employment Status")
+
+hist_region <- ggplot(nona_survey, aes(as.character(vote_trump), fill = census_region)) + geom_histogram(stat = "count") +
+  theme_bw() +
+  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+       fill = "Census Region")
+
+hist_race <- ggplot(nona_survey, aes(as.character(vote_trump), fill = race)) + geom_histogram(stat = "count") +
+  theme_bw() +
+  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+       fill = "Race")
+
+grid.arrange(hist_sex, hist_lab, hist_region, hist_race, nrow = 2, widths = c(1.55, 2))
+```
+
+Four histograms above illustrate the relationships between the voters' choice  and number of voters in the 2020 election, grouped by some of the independent variables in the logistic `survey_model`, `sex`, `labforce`, `census_region` and `race`. 
+
+```{r fig2, fig.cap = "Trump's Potential Voters, Depending on Sex and Age"}
+jitter <- nona_survey %>%
+  ggplot(aes(as.character(vote_trump), age)) +  
+  facet_grid(.~sex) +
+  geom_jitter(aes(color = age),alpha = 0.4) +
+  theme_bw() +
+  labs(x = "Whether vote for Donald Trump", y = "Age") 
+
+grid.arrange(jitter, newpage = FALSE)
+```
+
+After grouping the data points by sex, the above scatterplot enables us to observe how both of `sex` and `age` of the voters affect the choice they make towards the 2020 election in the United States.
+
+# Discussion
+
+Here you will summarize the previous sections and discuss conclusions drawn from the results. Make sure to elaborate and connect your analysis to the goal of the study.
+
+## Weaknesses
+
+Here we discuss weaknesses of the study, data, analysis, etc. You can also discuss areas for improvement.
+
+## Next Steps
+
+Here you discuss subsequent work to be done after this report. This can include next steps in terms of statistical analysis (perhaps there is a more efficient algorithm available, or perhaps there is a caveat in the data that would allow for some new technique). Future steps should also be specified in terms of the study setting (eg. including a follow-up survey on something, or a subsequent study that would complement the conclusions of your report).
+
+
+# References
+
+## Survey Data and Census Data
+
+Steven Ruggles, Sarah Flood, Ronald Goeken, Josiah Grover, Erin Meyer, Jose Pacas and Matthew Sobek. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IPUMS USA: Version 10.0 [dataset]. Minneapolis, MN: IPUMS, 2020. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://doi.org/10.18128/D010.V10.0
+
+Tausanovitch, Chris and Lynn Vavreck. 2020. Democracy Fund + UCLA Nationscape, October 10-17, 2019
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (version 20200814). Retrieved from 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://www.voterstudygroup.org/downloads?key=44f0708b-e919-44bb-9695-2846c3531bd5.
+
+## Other References
+
+Baptiste Auguie (2017). gridExtra: Miscellaneous Functions for "Grid" Graphics. R package version 2.3.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://CRAN.R-project.org/package=gridExtra
+
+Hadley Wickham. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York.
+
+Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2020). dplyr: A Grammar of Data 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Manipulation. R package version 1.0.2. https://CRAN.R-project.org/package=dplyr
+
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://doi.org/10.21105/joss.01686
+  
+Yihui Xie (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Leisch and Roger D. Peng, editors, Implementing Reproducible Computational Research. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chapman and Hall/CRC. ISBN 978-1466561595
+  
+Yihui Xie (2015) Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ISBN 978-1498716963
+
+Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R package version 1.30.
