@@ -138,7 +138,7 @@ kable(post_strat_predict, format = "markdown", digits = 3, align = "c",
       caption = "The Predicted Proportion of Voters for Republican Party")
 ```
 
-The proportion of voters for the Republican Party (The candidate of this party is Donald Trump.) is estimated to be **0.409**, meaning that there are less than a half voters id going to vote for Donald Trump. This prediction is based on our post-stratification analysis of the proportion of voters in favor of the Republican Party models by a logistic regression model, `survey_model`, which accounted for `age`, `labforce` (i.e employment status), `sex`, `census region`, and `race`.
+The proportion of voters for the Republican Party (The candidate of this party is Donald Trump.), with an equation of ${\hat{y}}^{PS} = \frac{\sum{N_j{\hat{y}_j}}}{\sum{N_j}}$, is estimated to be **0.409**, meaning that there are less than a half voters id going to vote for Donald Trump. This prediction is based on our post-stratification analysis of the proportion of voters in favor of the Republican Party models by a logistic regression model, `survey_model`, which accounted for `age`, `labforce` (i.e employment status), `sex`, `census region`, and `race`.
 
 ```{r summary aic, include = FALSE}
 summary(model_with_full)
