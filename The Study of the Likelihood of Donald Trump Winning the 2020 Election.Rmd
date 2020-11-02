@@ -297,15 +297,31 @@ Donges,N. (2018). The Logistic Regression: Algorithm. Retrieved from
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://machinelearning-blog.com/2018/04/23/logistic-regression-101/
 
+Lopez,G. (2016). Donald Trump's long history of racism, from the 1970s to 2020. Retrieved from: 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://www.vox.com/2016/7/25/12270880/donald-trump-racist-racism-history.
+
+Lumley,T. (n.d.). postStratify. Retrieved from https://www.rdocumentation.org/packages/survey/
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; versions/2.4/topics/postStratify
+
+Reston,M. (2020). With a shocking invocation of George Floyd, Trump shows his disconnect from 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nation's pain. Retrieved from https://www.cnn.com/2020/06/06/politics/trump-george-floyd-maine/
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; index.html.
+
 Wickham,H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York.
 
 Wickham,H., François,R., Henry,L. & Müller, K. (2020). dplyr: A Grammar of Data 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Manipulation. R package version 1.0.2. https://CRAN.R-project.org/package=dplyr
 
-Lumley,T. (n.d.). postStratify. Retrieved from
+Wolffe,R. (2016). Donald Trump's woman problem: they don't like him, not one little bit | Richard 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://www.rdocumentation.org/packages/survey/versions/2.4/topics/postStratify
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wolffe. Retrieved from: https://www.theguardian.com/commentisfree/2016/jun/03/donald-trump-
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; woman-problem-female-voter-support-poll-numbers.
 
 Wickham,H. (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, 
 
