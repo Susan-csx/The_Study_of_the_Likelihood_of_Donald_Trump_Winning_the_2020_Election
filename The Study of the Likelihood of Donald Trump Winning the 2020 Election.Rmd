@@ -120,6 +120,7 @@ To provide a better prediction on Trump's chances of winning the election, we pe
 $$
 \hat{y}^{PS} = \frac{\sum{N_j{\hat{y}_j}}}{\sum{N_j}}.
 $$
+(Caetano, 2020)
 
 $\hat{y}^{PS}$ in the equation above is the likelihood of Donald Trump winning the 2020 Election, where $\hat{y}_j$ is the estimated likelihood in $j^{th}$ cell, $N_j$ is the population size in $j^{th}$ cells and $\sum{N_j}$ is the entire population.
 
@@ -142,7 +143,7 @@ kable(post_strat_predict, format = "markdown", digits = 3, align = "c",
       caption = "The Predicted Proportion of Voters for Republican Party")
 ```
 
-The proportion of voters for the Republican Party (The candidate of this party is Donald Trump.), with an equation of ${\hat{y}}^{PS} = \frac{\sum{N_j{\hat{y}_j}}}{\sum{N_j}}$, is estimated to be **0.409**, meaning that there are less than a half voters is going to vote for Donald Trump. This prediction is based on our post-stratification analysis of the proportion of voters in favor of the Republican Party models by a logistic regression model, `survey_model`, which accounted for `age`, `labforce` (i.e employment status), `sex`, `census region`, and `race`.
+The proportion of voters for the Republican Party (The candidate of this party is Donald Trump.), with an equation of ${\hat{y}}^{PS} = \frac{\sum{N_j{\hat{y}_j}}}{\sum{N_j}}$ (Caetano, 2020), is estimated to be **0.409**, meaning that there are less than a half voters is going to vote for Donald Trump. This prediction is based on our post-stratification analysis of the proportion of voters in favor of the Republican Party models by a logistic regression model, `survey_model`, which accounted for `age`, `labforce` (i.e employment status), `sex`, `census region`, and `race`.
 
 ```{r summary aic, include = FALSE}
 summary(model_with_full)
@@ -260,6 +261,8 @@ AmiyaRanjanRout. (2020). Advantages and Disadvantages of Logistic Regression. Re
 Chen,H.W., Hu,X. & Yang,Z.C. (n.d.). Model Selection for Linear Regression Model. Retrieved from 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  https://jbhender.github.io/Stats506/F17/Projects/Group21_Model_Selection.html
+
+Caetano,S.J. (2020). STA304: Multilevel Regression & Poststratification. Pg.4.
 
 Donges,N. (2018). The Logistic Regression: Algorithm. Retrieved from
 
