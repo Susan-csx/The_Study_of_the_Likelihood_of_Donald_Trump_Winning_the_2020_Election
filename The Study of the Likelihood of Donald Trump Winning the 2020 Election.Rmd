@@ -34,22 +34,17 @@ census_data <- read_csv("census_data.csv")
 
 **Code and data supporting this analysis is available at:**
 
+https://github.com/Susan-csx/The_Study_of_the_Likelihood_of_Donald_Trump_Winning_the_2020_Election.git
+
 # Model
 
-Here we are interested in predicting the popular vote outcome of the 2020 American federal election (include citation). To do this we are employing a post-stratification technique. In the following sub-sections I will describe the model specifics and the post-stratification calculation.
+## Model Selection
 
+To estimate Donald Trump's chances of winning the 2020 American federal election, we choose to use the Multiple Logistic Regression Model with post-stratification. In comparison to Multiple Linear Regression, a Multiple Logistic Regression can be used to predict a discrete binary outcome based on several independent variables, while a linear regression is better at giving numeric predictions. In our study, the response variable `vote_trump` is a binary variable that takes the value 1 if the respondent claimed to vote for Trump and 0 otherwise. Thus, fitting a Multiple Logistic Regression Model to our data is the best choice available for us. Then, post-stratification allows us to divide all observations into different cells, which contributes to a better prediction. The whole process can be divided into three major steps: data cleaning, modeling, and post-stratification.
 
-## Model Specifics
-I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:
+## Data Selection
 
-$$
-log(\frac{p}{1-p}) = \beta_0 + \beta_1 X_{1age} + \beta_2 X_{2Labor_{Yes}} + \beta_3 X_{3Male} + \beta_4 X_{4Region_{NW}} + \beta_5 X_{5Region_{S}} + \beta_6 X_{6Region_{W}}
-$$
-$$
-+ \beta_7 X_{7Race_{B.AA.N}} + \beta_8 X_{8Race_{CN}} + \beta_9 X_{9Race_{JP}} + \beta_{10} X_{10Race_{O.Asian}} + \beta_{11} X_{11Race_{Other}} + \beta_{12} X_{12Race_{White}} + \epsilon
-$$
-
-Where $y$ represents the proportion of voters who will vote for Donald Trump. Similarly, $\beta_0$ represents the intercept of the model, and is the probability of voting for Donald Trump at age 0. Additionally, $\beta_1$ represents the slope of the model. So, for everyone one unit increase in age, we expect a $\beta_1$ increase in the probability of voting for Donald Trump.
+The survey data that we are dealing with is a raw data set, so performing a data cleaning is very necessary. First, we removed all observations with NA in our survey data because missing values may affect the accuracy of predictions. To use the post-stratification, we performed some mutations on variables to make sure the variables in both survey data and census data matches. The marital status (`marst`) is characterized into 1 and 0, where 1 means married and 0 means unmarried. `census_region` in survey data can be matched to `region` in census data, so we grouped `region` to "Northeast", "Midwest", "South", and "West", which matches the subcategories in `census_region`. For the same reason, `race` was grouped according to subcategories in `race_ethnicity`, and people aged above 17 and under 94 were selected.
 
 ```{r, include = FALSE}
 # Rename gender variable to sex in nona_survey data
@@ -98,6 +93,44 @@ nona_survey <- nona_survey %>%
 
 ```
 
+## Model Specifics
+
+We chose to perform a Multiple Logistic Regression on our data to model the likelihood of Donald Trump winning the 2020 Election because our response variable is binary. Also, a Multiple Logistic Regression "doesn't require input features to be scaled" and the result can be easily interpreted and understood (Donges, 2018). We started by removing `vote_2016`, `ideo5`, and `household_income` because they were not available in our census data. The model selection was done by comparing the AIC values, which measured if a model "balances the goodness of fit with simplicity" (Chen, Hu & Yang, n.d.). A lower AIC value suggests a better-fit model. 
+
+We started with fitting all the remaining variables with a multiple logistic model, which gave an AIC value of 7447. Then, `congress_distrist`, `vote_intention`, `registration`, and `foreign_born ` were removed from the model, and the new model gives an AIC value of 7206, which means the reduced model is better than the full model. By repeating this process, our final model with variables `age`, `labforce`, `sex`, `census_region`, and `race` gave an AIC value of 7203. According to Figure \@ref(fig:fig2), we can tell people aged under 30 are less likely to vote for Donald Trump in comparison to those aged above 30. Also, considering Donald Trump's comments about women, how male and female favor Trump may also differ, and this is proved by the first plot in Figure \@ref(fig:fig1). Thus, it is not surprising that these variables are included in our final model.(All the AIC values are shown in \@ref(tab:table2).)
+
+The model is run by R, and here is how our model looks like:
+
+$$
+log(\frac{p}{1-p}) = \beta_0 + \beta_1 X_{1age} + \beta_2 X_{2Labor_{Yes}} + \beta_3 X_{3Male} + \beta_4 X_{4Region_{NW}} + \beta_5 X_{5Region_{S}} + \beta_6 X_{6Region_{W}}
+$$
+$$
++ \beta_7 X_{7Race_{B.AA.N}} + \beta_8 X_{8Race_{CN}} + \beta_9 X_{9Race_{JP}} + \beta_{10} X_{10Race_{O.Asian}} + \beta_{11} X_{11Race_{Other}} + \beta_{12} X_{12Race_{White}} + \epsilon,
+$$
+
+where:
+
+- $log$ represents the natural logarithm
+
+- $p$ represents the probability of Trump winning the 2020 Election
+
+- $\frac{1}{1-p}$ represents the "odd ratio"
+
+- $log(\frac{p}{1-p})$ represents the log odds ratio
+
+- $X_i$ represents the predictor variables in our model
+
+- $X_{1age}$ represents the input value of age
+
+- For $X_i$ from $X_2$ to $X_{12}$, $X_i$ are dummy variables and each of them takes the value 0 or 1
+
+- $\beta_0$ is the constant term which represents the intercept at time zero. It is the value of $logit(p)$ when every $X_i = 0$
+
+- $\beta_i$s are the coefficients for each of the subcategories which represent the average difference in the log of odds ratio between $X_i = 0$ and $X_i = 1$ holding other variables constant 
+
+(e.g. $\beta_3$ represents the average difference in the log of odds ratio between male and female holding other variables constant)
+
+- $\epsilon$ represents the error term
 
 ```{r, include = FALSE}
 # Step 1: With all variables
@@ -114,7 +147,15 @@ survey_model <- glm(vote_trump ~ age + labforce + sex + census_region + race, da
 
 ## Post-Stratification 
 
-In order to estimate the proportion of voters who will vote for Donald Trump I need to perform a post-stratification analysis. Here I create cells based off different ages. Using the model described in the previous sub-section I will estimate the proportion of voters in each age bin. I will then weight each proportion estimate (within each bin) by the respective population size of that bin and sum those values and divide that by the entire population size. 
+To provide a better prediction on Trump's chances of winning the election, we performed a post-stratification analysis. It "adjusts the sampling and replicate weights so that the joint distribution of a set of post-stratifying variables matches the known population joint distribution"(Lumley, n.d.). Since we had done the data cleaning before, our data was prepared to do the post-stratification at this time. We started by partitioning the data into demographic cells based on each subcategory of each predictor variable. We decided to divide all of them because we predicted there were differences among these subcategories (based on Figure \@ref(fig:fig1), which was plot using the survey data). The plot will be discussed in the discussion section of this report. Then, we used the model above to estimate Trump's chances of winning the election for each cell. The final step was to do the calculations based on the formula:
+$$
+\hat{y}^{PS} = \frac{\sum{N_j{\hat{y}_j}}}{\sum{N_j}}
+$$
+
+Where $\hat{y}^{PS}$ represents the likelihood of Donald Trump winning the 2020 Election
+$\hat{y}_j$ hat represents the estimated likelihood in $j^{th}$ cell
+$N_j$ represents the population size in $j^{th}$ cells
+$\sum{N_j}$ represents the entire population
 
 
 \newpage
@@ -176,26 +217,26 @@ $$
 hist_sex <- ggplot(nona_survey, aes(as.character(vote_trump), fill = sex)) + 
   geom_histogram(stat = "count") +
   theme_bw() +
-  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+  labs(x = "If vote for Donald Trump", y = "Number of People", 
        fill = "Sex") +
   theme(plot.title = element_text(hjust = 0))
 
 hist_lab <- ggplot(nona_survey, aes(as.character(vote_trump), fill = labforce)) + geom_histogram(stat = "count") +
   theme_bw() +
-  labs(x = "Whether vote for Donald Trump", y = "Number of People",
+  labs(x = "If vote for Donald Trump", y = "Number of People",
        fill = "Employment Status")
 
 hist_region <- ggplot(nona_survey, aes(as.character(vote_trump), fill = census_region)) + geom_histogram(stat = "count") +
   theme_bw() +
-  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+  labs(x = "If vote for Donald Trump", y = "Number of People", 
        fill = "Census Region")
 
 hist_race <- ggplot(nona_survey, aes(as.character(vote_trump), fill = race)) + geom_histogram(stat = "count") +
   theme_bw() +
-  labs(x = "Whether vote for Donald Trump", y = "Number of People", 
+  labs(x = "If vote for Donald Trump", y = "Number of People", 
        fill = "Race")
 
-grid.arrange(hist_sex, hist_lab, hist_region, hist_race, nrow = 2, widths = c(1.55, 2))
+grid.arrange(hist_sex, hist_lab, hist_region, hist_race, nrow = 2, widths = c(1.55, 2), newpage = FALSE)
 ```
 
 Four histograms above illustrate the relationships between the voters' choice  and number of voters in the 2020 election, grouped by some of the independent variables in the logistic `survey_model`, `sex`, `labforce`, `census_region` and `race`. 
@@ -215,7 +256,7 @@ After grouping the data points by sex, the above scatterplot enables us to obser
 
 # Discussion
 
-Here you will summarize the previous sections and discuss conclusions drawn from the results. Make sure to elaborate and connect your analysis to the goal of the study.
+From the result, we predict that only 41 % of the voters will vote for Donald Trump from the Republican Party, which has no more than half of the people voting for him. And this might relate to some facts we observe from figure  \@ref(fig:fig1) and  \@ref(fig:fig2). We can see a large proportion of women do not want to vote for Donald Trump, especially for ages between 20 to 30. This can relate to his sexism, disrespected behavior, and language toward women in the past. It reflects that the odds for males are 52% higher than the odds of females voting for Donald Trump. Also, there is a large proportion of black and other races that do not want to vote for Trump. This can be due to the racist wordings and behavior of many races. And the recent case of “George Floyd’s death” also gains the black's hatred of Donald Trump, which also raises the discrimination issues of disproportioned deaths on African-Americans. It shows that the odds for black voting for Trump are 84% lower than the odds for other races. Therefore, the predicted proportion of voting for Donald Trump is less than half can be highly related to his inappropriate behaviors in the past or even the rise of racism and inequality in America.
 
 ## Weaknesses
 
@@ -244,30 +285,42 @@ Tausanovitch, Chris and Lynn Vavreck. 2020. Democracy Fund + UCLA Nationscape, O
 
 ## Other References
 
-Baptiste Auguie (2017). gridExtra: Miscellaneous Functions for "Grid" Graphics. R package version 2.3.
+Auguie,B (2017). gridExtra: Miscellaneous Functions for "Grid" Graphics. R package version 2.3.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://CRAN.R-project.org/package=gridExtra
 
-Hadley Wickham. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York.
+Chen,H.W., Hu,X. & Yang,Z.C. (n.d.). Model Selection for Linear Regression Model. Retrieved from 
 
-Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2020). dplyr: A Grammar of Data 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  https://jbhender.github.io/Stats506/F17/Projects/Group21_Model_Selection.html
+
+Donges,N. (2018). The Logistic Regression: Algorithm. Retrieved from
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://machinelearning-blog.com/2018/04/23/logistic-regression-101/
+
+Wickham,H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York.
+
+Wickham,H., François,R., Henry,L. & Müller, K. (2020). dplyr: A Grammar of Data 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Manipulation. R package version 1.0.2. https://CRAN.R-project.org/package=dplyr
 
-Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, 
+Lumley,T. (n.d.). postStratify. Retrieved from
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://www.rdocumentation.org/packages/survey/versions/2.4/topics/postStratify
+
+Wickham,H. (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://doi.org/10.21105/joss.01686
   
-Yihui Xie (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich 
+Xie,Y. (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Leisch and Roger D. Peng, editors, Implementing Reproducible Computational Research. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chapman and Hall/CRC. ISBN 978-1466561595
   
-Yihui Xie (2015) Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC.
+Xie,Y. (2015) Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC.
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ISBN 978-1498716963
 
-Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. 
+Xie,Y. (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R package version 1.30.
